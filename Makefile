@@ -33,8 +33,8 @@ clean::
 
 .PHONY: ignore-%
 ignore-%:
-	@grep -q "^$*$$" .gitignore || { \
-	  echo "$*" >> .gitignore; echo "Ignore $@"; }
+	#@grep -q "^$*$$" .gitignore || { \
+	#  echo "$*" >> .gitignore; echo "Ignore $@"; }
 
 
 #
