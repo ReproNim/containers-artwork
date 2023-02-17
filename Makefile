@@ -8,7 +8,7 @@ PICS_IGNORE ?= "XXX"
 PICS=$(shell find . -iname \*svg \
 	| sed -e 's/svg/pdf/g' -e 's/\([^\]\)\([ \t:]\)/\1\\\\\2/g' \
 	| grep -v -e $(PICS_IGNORE) )
-# For history figure we need pngs due to crippled transparency suport
+# For history figure we need pngs due to crippled transparency support
 # in poppler, so for now would rely on PNGs
 PICS+=$(shell [ -d neuropy_history_tuned ] && \
 	find neuropy_history_tuned/ -iname \*svg \
@@ -42,7 +42,7 @@ ignore-%:
 #
 %_tuned: %.svgtune %.svg
 	@echo "Splitting SVG using $<"
-# Use gqview to prevew svgs -- quite nice
+# Use gqview to preview svgs -- quite nice
 	@../tools/svgtune/svgtune $<
 # Touch it to adjust the timestamp so make does not think that we are
 # out of date later on
