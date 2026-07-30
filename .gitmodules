@@ -1,4 +1,4 @@
-[submodule "poster"]
-	path = poster
+[submodule "myyoda--poster"]
+	path = sourcedata/myyoda--poster
 	url = https://github.com/myyoda/poster
 	datalad-url = https://github.com/myyoda/poster
