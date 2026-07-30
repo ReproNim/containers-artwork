@@ -1,0 +1,4 @@
+[submodule "poster"]
+	path = poster
+	url = https://github.com/myyoda/poster
+	datalad-url = https://github.com/myyoda/poster
