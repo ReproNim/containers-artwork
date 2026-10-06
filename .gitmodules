@@ -5,3 +5,4 @@
 [submodule "svgtune"]
 	path = tools/svgtune
 	url = https://github.com/yarikoptic/svgtune
+	datalad-url = https://github.com/yarikoptic/svgtune

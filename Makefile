@@ -1,136 +1,81 @@
-all:: pics
+# Extracts from the artwork, and their renderings.
+#
+#   make           -- (re)generate extracts (*_tuned/*.svg) as instructed by
+#                     the *.svgtune files
+#   make pdfs      -- also render the extracts into .pdf's
+#   make pngs      -- also render the extracts into .png's
+#   make FILE.pdf, FILE.png, FILE_sw.png, FILE_30dpi.png, ...
+#                  -- render a particular FILE.svg
+#
+# svgtune (https://github.com/yarikoptic/svgtune) is provided as a git
+# submodule: run "git submodule update --init tools/svgtune" (or
+# "datalad get -n tools/svgtune") to get it.  Otherwise the one found in
+# the PATH is used.
 
-# Optionally some PICS could be ignored. By default XXX ones.
-# PICS_IGNORE must contain a rule for grep
-PICS_IGNORE ?= "XXX"
+SVGTUNE ?= $(firstword $(wildcard tools/svgtune/svgtune) svgtune)
+INKSCAPE ?= inkscape
 
-# For every .svg we must have a pdf
-PICS=$(shell find . -iname \*svg \
-	| sed -e 's/svg/pdf/g' -e 's/\([^\]\)\([ \t:]\)/\1\\\\\2/g' \
-	| grep -v -e $(PICS_IGNORE) )
-# For history figure we need pngs due to crippled transparency support
-# in poppler, so for now would rely on PNGs
-PICS+=$(shell [ -d neuropy_history_tuned ] && \
-	find neuropy_history_tuned/ -iname \*svg \
-	| sed -e 's/.svg/_sw.png/g' -e 's/\([^\]\)\([ \t:]\)/\1\\\\\2/g' \
-	| grep -v -e $(PICS_IGNORE))
-# Converted
-PICS_CONVERTED=
-#PICS+=$(PICS_CONVERTED)
-SVGIS=$(shell  find . -iname \*.svgtune | sed -e 's/.svgtune/_tuned/g')
+all:: extracts
 
-FMAKE := $(MAKE) -s -f $(lastword $(MAKEFILE_LIST))
+SVGTUNES := $(wildcard *.svgtune)
+TUNED := $(SVGTUNES:.svgtune=_tuned)
 
-pics: $(SVGIS) $(PICS)
+extracts: $(TUNED)
 
-pics_debug:
-	echo $(SVGIS) $(PICS) | tr ' ' '\n' | sort | uniq -c | sort -n
+# Extracts are known only after they are generated, hence the sub-make
+pdfs pngs: extracts
+	@$(MAKE) --no-print-directory \
+		$$(ls $(addsuffix /*.svg,$(TUNED)) | sed -e 's/\.svg$$/.$(@:s=)/')
 
 clean::
-	rm $(PICS_CONVERTED) pymvpa_code_V.svg
-	for p in *.svg; do rm -f $${p%*.svg}.{pdf,eps,png}; done
-	rm -fr *_tuned
+	rm -f $(foreach d,$(TUNED),$(d)/*.pdf $(d)/*.png $(d)/*.eps)
 
-.PHONY: ignore-%
-ignore-%:
-	#@grep -q "^$*$$" .gitignore || { \
-	#  echo "$*" >> .gitignore; echo "Ignore $@"; }
-
+.PHONY: all extracts pdfs pngs clean
 
 #
 # SVGTune
 #
-%_tuned: %.svgtune %.svg
-	@echo "Splitting SVG using $<"
-# Use gqview to preview svgs -- quite nice
-	@../tools/svgtune/svgtune $<
+%_tuned: %.svgtune %.svg $(wildcard tools/svgtune/svgtune)
+	@echo "Tuning $*.svg using $<"
+# On failure, make the directory look outdated so it is redone next time
+	@$(SVGTUNE) $< || { touch -d @0 "$@"; exit 1; }
 # Touch it to adjust the timestamp so make does not think that we are
 # out of date later on
 	@touch "$@"
-# And assure that we have ignore ... cannot be in deps since would cause
-# regeneration over and over again
-	@$(MAKE) ignore-$@
-
-# Custom version of pymvpa_code, without code, thus only V, and
-# width changed accordingly
-pymvpa_code_V.svg: pymvpa_code.svg
-	sed -e 's,width="729.[0-9]*",width="353.88333",g' $< >| $@
 
 #
 # Inkscape rendered figures
 #
-%.pdf: %.svg ignore-%.pdf
+%.pdf: %.svg
 	@echo "Rendering $@"
-	@inkscape -z -f "$<" -A "$@"
+	@$(INKSCAPE) --export-type=pdf --export-filename="$@" "$<"
 
-%.eps: %.svg ignore-%.eps
+%.eps: %.svg
 	@echo "Rendering $@"
-	@inkscape -z -T -f "$<" -E "$@"
+	@$(INKSCAPE) --export-type=eps --export-text-to-path --export-filename="$@" "$<"
 
-%.png: %.svg ignore-%.png
+%.png: %.svg
 	@echo "Rendering $@"
-	@inkscape -z -f "$<" -e "$@" -d 150
-
-
-# Pygmentize rendered code
-%.svg: %.py ignore-%.svg
-	@echo "Pygmentizing $@"
-	@pygmentize -f svg -l python -O style=emacs -o "$@" "$<"
-
-#
-# Rare xfig plots
-#
-%.pdf: %.fig ignore-%.pdf
-	@echo "Rendering $@"
-	@fig2dev -L pdf "$<" "$@"
-
+	@$(INKSCAPE) --export-type=png --export-dpi=150 --export-filename="$@" "$<"
 
 # PNG at slide width
 SLIDE_WIDTH=1024
-SLIDE_HEIGHT=768
-%_sw.png: %.svg ignore-%_sw.png
+%_sw.png: %.svg
 	@echo "Rendering $@ at slide width of $(SLIDE_WIDTH)"
-	@inkscape -z -f "$<" -e "$@" --export-width=$(SLIDE_WIDTH)
+	@$(INKSCAPE) --export-type=png --export-width=$(SLIDE_WIDTH) --export-filename="$@" "$<"
 
-# Following two rules will try imagemagick's to convert an image to
-# the corresponding size...
-# TODO: figure out how to make them match for both jpg and png
-#       files as sources
-%_sw.png: %.jpg ignore-%_sw.png
-	@echo "Converting $@ at slide width of $(SLIDE_WIDTH)"
-	@convert -geometry $(SLIDE_WIDTH) "$<" "$@"
-
-%_sh.png: %.jpg ignore-%_sh.png
-	@echo "Converting $@ at slide height of $(SLIDE_HEIGHT)"
-	@convert -geometry x$(SLIDE_HEIGHT) "$<" "$@"
-
-%_15dpi.png: %.svg ignore-%_15dpi.png
+%_15dpi.png: %.svg
 	@echo "Rendering $@"
-	@inkscape -z -f "$<" -e "$@" -d 15
+	@$(INKSCAPE) --export-type=png --export-dpi=15 --export-filename="$@" "$<"
 
-%_30dpi.png: %.svg ignore-%_30dpi.png
+%_30dpi.png: %.svg
 	@echo "Rendering $@"
-	@inkscape -z -f "$<" -e "$@" -d 30
+	@$(INKSCAPE) --export-type=png --export-dpi=30 --export-filename="$@" "$<"
 
-%_75dpi.png: %.svg ignore-%_75dpi.png
+%_75dpi.png: %.svg
 	@echo "Rendering $@"
-	@inkscape -z -f "$<" -e "$@" -d 75
+	@$(INKSCAPE) --export-type=png --export-dpi=75 --export-filename="$@" "$<"
 
-%_600dpi.png: %.svg ignore-%_600dpi.png
+%_600dpi.png: %.svg
 	@echo "Rendering $@"
-	@inkscape -z -f "$<" -e "$@" -d 600
-
-
-#
-# Dia rendered figures (mostly for historic/)
-#
-%.pdf: %.dia ignore-%.pdf
-	dia -e $@ $<
-%_w800.png: %.dia ignore-%_w800.png
-	dia -s 800 -e $@ $<
-
-# Some additional PICS to render not worth adding find command ;)
-all:: historic/pymvpa_design_v1_20080314.pdf \
-	borrowed/fred-commands.pdf
-
-.PHONY: all pics
+	@$(INKSCAPE) --export-type=png --export-dpi=600 --export-filename="$@" "$<"
