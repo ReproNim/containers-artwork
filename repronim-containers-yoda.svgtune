@@ -1,0 +1,78 @@
+# svgtune(1) instructions to produce extracts from the poster.
+#
+# Run "make" (or "svgtune repronim-containers-yoda.svgtune") to (re)generate
+# them under repronim-containers-yoda_tuned/ whenever the poster changes.
+#
+# Extracts select the top level groups of the poster by their
+# inkscape:label (see "Objects" dialog in Inkscape):
+#   PRINCIPLES                     -- "YODA principles" panel
+#   YODA-DATASET-LAYOUT            -- "YODA dataset layout ..." panel
+#   YODA-DATASET-LAYOUT-CONNECTOR  -- its gray "callout" down to the flow
+#   PAPERS-FLOW, PAPERS-FLOW-LANES -- the lower part: data flow to papers
+#   DATALAD-NESTING                -- nesting of datasets (D1, D2, D3)
+#   DATALAD-NESTING-CONNECT[-...]  -- dashed lines/ellipses connecting parts
+#   YODAs layer                    -- yoda-principles,
+#                                     yoda-learn-control-you-must,
+#                                     yoda-track-all
+#
+# Each extract
+#   %reset  -- starts from the original poster,
+#   %only   -- leaves visible only the listed groups,
+#   %prune  -- removes everything hidden,
+#   %crop   -- fits the page to the visible drawing (with a margin in mm).
+# "transform=translate(x,y)" moves an element by x,y (in mm).
+
+%file repronim-containers-yoda.svg
+
+# Lower part of the poster: from raw data to papers
+%only label:re=^PAPERS-FLOW label=yoda-track-all
+# move Yoda's advice closer to the flow for a more compact figure
+g label=yoda-track-all transform=translate(10.8,18.9)
+%prune
+%crop margin=5
+%save lower
+
+%reset
+%only label:re=^PAPERS-FLOW
+%prune
+%crop margin=5
+%save lower-noyoda
+
+# "YODA dataset layout" panel
+%reset
+%only label=YODA-DATASET-LAYOUT label=yoda-learn-control-you-must
+%prune
+%crop margin=5
+%save filesystem
+
+%reset
+%only label=YODA-DATASET-LAYOUT
+%prune
+%crop margin=5
+%save filesystem-noyoda
+
+# "YODA principles" panel
+%reset
+%only label=PRINCIPLES label=yoda-principles
+%prune
+%crop margin=5
+%save principles
+
+%reset
+%only label=PRINCIPLES
+%prune
+%crop margin=5
+%save principles-noyoda
+
+# Nesting of datasets
+%reset
+%only label=DATALAD-NESTING
+%prune
+%crop margin=5
+%save nesting
+
+# Complete poster, but without Yodas
+%reset
+layer label=YODAs style=display:none
+%prune
+%save noyoda
