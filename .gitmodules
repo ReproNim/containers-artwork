@@ -2,3 +2,6 @@
 	path = sourcedata/myyoda--poster
 	url = https://github.com/myyoda/poster
 	datalad-url = https://github.com/myyoda/poster
+[submodule "svgtune"]
+	path = tools/svgtune
+	url = https://github.com/yarikoptic/svgtune
