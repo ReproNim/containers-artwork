@@ -1,0 +1,70 @@
+# svgtune(1) instructions to produce extracts from the poster.
+#
+# Run "make" (or "svgtune repronim-containers-stamped.svgtune") to
+# (re)generate them under repronim-containers-stamped_tuned/ whenever the
+# poster changes.
+#
+# Extracts select the top level groups of the poster by their
+# inkscape:label (see "Objects" dialog in Inkscape):
+#   PROPERTIES                    -- "STAMPED properties ..." panel
+#   STAMPED-BIDS-STUDY            -- "STAMPED dataset layout ..." panel
+#   STAMPED-BIDS-STUDY-CONNECTOR  -- its gray "callout" down to the flow
+#   PAPERS-FLOW                   -- the lower part: data flow to papers
+#   DATALAD-NESTING               -- nesting of datasets (D1, D2, D3)
+#   DATALAD-NESTING-CONNECT       -- dashed lines/ellipses connecting parts
+#   YODAs layer                   -- yoda-learn-control-you-must,
+#                                    yoda-track-all
+#   Outside-Misc layer            -- notes outside of the page
+#
+# Each extract
+#   %reset  -- starts from the original poster,
+#   %only   -- leaves visible only the listed groups,
+#   %prune  -- removes everything hidden,
+#   %crop   -- fits the page to the visible drawing (with a margin in mm).
+
+%file repronim-containers-stamped.svg
+
+# Lower part of the poster: from raw data to papers
+%only label=PAPERS-FLOW label=yoda-track-all
+%prune
+%crop margin=5
+%save lower
+
+%reset
+%only label=PAPERS-FLOW
+%prune
+%crop margin=5
+%save lower-noyoda
+
+# "STAMPED dataset layout" panel
+%reset
+%only label=STAMPED-BIDS-STUDY label=yoda-learn-control-you-must
+%prune
+%crop margin=5
+%save bids-study
+
+%reset
+%only label=STAMPED-BIDS-STUDY
+%prune
+%crop margin=5
+%save bids-study-noyoda
+
+# "STAMPED properties" panel
+%reset
+%only label=PROPERTIES
+%prune
+%crop margin=5
+%save properties
+
+# Nesting of datasets
+%reset
+%only label=DATALAD-NESTING
+%prune
+%crop margin=5
+%save nesting
+
+# Complete poster, but without Yodas
+%reset
+layer label=YODAs style=display:none
+%prune
+%save noyoda
